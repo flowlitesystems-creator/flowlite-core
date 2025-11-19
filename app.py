@@ -23,7 +23,7 @@ def webhook():
         chat_id = body.get("senderData", {}).get("chatId")
         return responder(chat_id, text)
 
-    return jsonify({"status": "ignored", "reason": type_message}), 200
+    return jsonify({"ignored": type_message}), 200
 
 
 def responder(chat_id, texto):
@@ -40,11 +40,8 @@ def responder(chat_id, texto):
     }
 
     r = requests.post(url, json=payload, headers=headers)
-    print("RESPUESTA GREEN-API:", r.text)
 
-    return jsonify({"status": "ok"}), 200
+    print("GREEN-API RESPONSE:", r.status_code, r.text)
 
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    return jsonify({"sent": True}), 200
 
