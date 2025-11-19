@@ -4,8 +4,9 @@ import os
 
 app = Flask(__name__)
 
-GREENAPI_INSTANCE_ID = os.getenv("GREENAPI_INSTANCE_ID")
+GREENAPI_ID = os.getenv("GREENAPI_INSTANCE_ID")
 GREENAPI_TOKEN = os.getenv("GREENAPI_TOKEN")
+
 
 @app.route("/", methods=["GET"])
 def home():
@@ -15,31 +16,34 @@ def home():
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
-    print("📩 Mensaje recibido:", data)
+    print("📩 Webhook recibido:", data)
 
     try:
-        message = data['messageData']['textMessage']
-        phone = data['senderData']['chatId'].replace("@c.us", "")
+        # Obtener mensaje
+        message = data["messageData"]["textMessage"]
+        chat_id = data["senderData"]["chatId"]
 
-        enviar_respuesta(phone, f"Recibí tu mensaje: {message}")
+        # Enviar la respuesta automática
+        send_message(chat_id, f"Recibido: {message}")
 
     except Exception as e:
-        print("⚠️ Error procesando mensaje:", e)
+        print("❗ Error procesando mensaje:", e)
 
     return jsonify({"status": "ok"}), 200
 
 
-def enviar_respuesta(phone, texto):
-    url = f"https://7107.api.green-api.com/waInstance{GREENAPI_INSTANCE_ID}/sendMessage/{GREENAPI_TOKEN}"
+def send_message(chat_id, text):
+    url = f"https://7107.api.green-api.com/waInstance{GREENAPI_ID}/sendMessage/{GREENAPI_TOKEN}"
 
     payload = {
-        "chatId": f"{phone}@c.us",
-        "message": texto
+        "chatId": chat_id,
+        "message": text
     }
 
     r = requests.post(url, json=payload)
-    print("📤 Enviado:", r.text)
+    print("📤 Respuesta enviada:", r.text)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
+    port = int(os.getenv("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
