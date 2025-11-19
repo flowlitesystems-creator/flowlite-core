@@ -1,11 +1,22 @@
-from flask import Flask, request, jsonify
-import requests
 import os
+import requests
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-GREENAPI_ID = os.getenv("GREENAPI_INSTANCE_ID")
-GREENAPI_TOKEN = os.getenv("GREENAPI_TOKEN")
+INSTANCE_ID = os.getenv("GREENAPI_INSTANCE_ID")
+TOKEN = os.getenv("GREENAPI_TOKEN")
+
+# URL base de GreenAPI
+BASE_URL = f"https://7107.api.green-api.com/waInstance{INSTANCE_ID}"
+
+def enviar_mensaje(chat_id, texto):
+    url = f"{BASE_URL}/sendMessage/{TOKEN}"
+    payload = {
+        "chatId": chat_id,
+        "message": texto
+    }
+    requests.post(url, json=payload)
 
 @app.route("/", methods=["GET"])
 def home():
@@ -14,33 +25,21 @@ def home():
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
-    print("💬 Mensaje recibido:", data)
+    print("Webhook recibido:", data)
 
     try:
-        msg = data.get("messageData", {}).get("textMessageData", {}).get("textMessage", "")
-        sender = data.get("senderData", {}).get("chatId", "")
+        msg = data["messageData"]["textMessageData"]["textMessage"]
+        chat_id = data["senderData"]["chatId"]
 
-        if msg and sender:
-            reply_message(sender, msg)
+        # RESPUESTA AUTOMÁTICA
+        respuesta = f"Recibí tu mensaje: {msg}"
+        enviar_mensaje(chat_id, respuesta)
 
-    except Exception as e:
-        print("Error procesando mensaje:", e)
+    except:
+        pass
 
     return jsonify({"status": "ok"}), 200
 
-
-def reply_message(chat_id, incoming_text):
-    url = f"https://7107.api.green-api.com/waInstance{GREENAPI_ID}/sendMessage/{GREENAPI_TOKEN}"
-
-    payload = {
-        "chatId": chat_id,
-        "message": f"Recibí tu mensaje: {incoming_text}"
-    }
-
-    response = requests.post(url, json=payload)
-    print("📤 Respuesta enviada:", response.text)
-
-
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 10000))
+    port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
