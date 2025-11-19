@@ -3,40 +3,55 @@ import requests
 
 app = Flask(__name__)
 
+# 🔥 TU INSTANCIA Y TOKEN AQUÍ
 INSTANCE_ID = "7107368022"
 API_TOKEN = "1f9e8df4f4ee4354bfb08547cc11ed83639a1764569e43169a"
 
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    data = request.json
-    print("Webhook recibido:", data)
-
-    body = data.get("body", {})
-    message_data = body.get("messageData", {})
-    type_message = message_data.get("typeMessage")
-
-    if type_message == "textMessage":
-        text = message_data.get("textMessageData", {}).get("textMessage", "")
-        return enviar_respuesta(text)
-
-    if type_message == "extendedTextMessage":
-        text = message_data.get("extendedTextMessageData", {}).get("text", "")
-        return enviar_respuesta(text)
-
-    print("Tipo no manejado:", type_message)
-    return jsonify({"status": "ignored"}), 200
-
-
-def enviar_respuesta(text):
-    url = f"https://api.greenapi.com/waInstance{INSTANCE_ID}/sendMessage/{API_TOKEN}"
+# =================================
+# FUNCIÓN PARA RESPONDER A WHATSAPP
+# =================================
+def enviar_respuesta(chat_id, texto):
+    url = f"https://api.green-api.com/waInstance{INSTANCE_ID}/sendMessage/{API_TOKEN}"
 
     payload = {
-        "chatId": "51990852170@c.us",
-        "message": f"Recibí tu mensaje: {text}"
+        "chatId": chat_id,
+        "message": texto
     }
 
     r = requests.post(url, json=payload)
-    print("Respuesta enviada:", r.text)
+
+    print("📤 RESPUESTA ENVIADA:", r.text)
+    return r.status_code
+
+
+# ===========
+# WEBHOOK
+# ===========
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    data = request.json
+    print("📩 Webhook recibido:", data)
+
+    body = data.get("body", {})
+    msg = body.get("messageData", {})
+    msg_type = msg.get("typeMessage")
+
+    chat_id = body.get("senderData", {}).get("chatId", "")
+
+    # mensaje de texto normal
+    if msg_type == "textMessage":
+        texto = msg.get("textMessageData", {}).get("textMessage", "")
+        print("💬 Texto:", texto)
+        enviar_respuesta(chat_id, f"Recibí tu mensaje: {texto}")
+
+    # mensaje extendido (la mayoría de celulares)
+    elif msg_type == "extendedTextMessage":
+        texto = msg.get("extendedTextMessageData", {}).get("text", "")
+        print("💬 Texto extendido:", texto)
+        enviar_respuesta(chat_id, f"Recibí tu mensaje: {texto}")
+
+    else:
+        print("⚠️ Tipo no manejado:", msg_type)
 
     return jsonify({"status": "ok"}), 200
 
