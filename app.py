@@ -2,26 +2,27 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
+
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
         data = request.json
         print("Webhook recibido:", data)
 
-        body = data.get("body", {})
-        message_data = body.get("messageData", {})
+        # OJO: messageData está directamente en data
+        message_data = data.get("messageData", {})
         type_message = message_data.get("typeMessage")
 
         # === MENSAJE DE TEXTO NORMAL ===
         if type_message == "textMessage":
             text = message_data.get("textMessageData", {}).get("textMessage", "")
-            print("MENSAJE RECIBIDO:", text)
+            print("MENSAJE TEXTO:", text)
             return responder(text)
 
         # === MENSAJE DE TEXTO EXTENDIDO ===
         if type_message == "extendedTextMessage":
             text = message_data.get("extendedTextMessageData", {}).get("text", "")
-            print("MENSAJE EXTENDIDO RECIBIDO:", text)
+            print("MENSAJE EXTENDIDO:", text)
             return responder(text)
 
         print("Tipo de mensaje no manejado:", type_message)
