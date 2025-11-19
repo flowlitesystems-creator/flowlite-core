@@ -8,51 +8,33 @@ API_TOKEN = "1f9e8df4f4ee4354bfb08547cc11ed83639a1764569e43169a"
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    try:
-        data = request.json
-        print("Webhook recibido:", data)
+    data = request.json
 
-        body = data.get("body", {})
-        message_data = body.get("messageData", {})
-        type_message = message_data.get("typeMessage")
+    body = data.get("body", {})
+    type_message = body.get("typeMessage")  # <--- ESTA ES LA RUTA CORRECTA PARA TU JSON
 
-        # OBTENER NÚMERO DEL REMITENTE
-        sender = body.get("senderData", {}).get("sender", "")
+    # === TEXT NORMAL ===
+    if type_message == "textMessage":
+        text = body.get("textMessageData", {}).get("textMessage", "")
+        return responder(body.get("senderData", {}).get("chatId"), text)
 
-        # MENSAJE NORMAL
-        if type_message == "textMessage":
-            text = message_data.get("textMessageData", {}).get("textMessage", "")
-            print("MENSAJE RECIBIDO:", text)
-            enviar_respuesta(sender, text)
-            return jsonify({"status": "ok"}), 200
+    # === EXTENDED TEXT ===
+    if type_message == "extendedTextMessage":
+        text = body.get("extendedTextMessageData", {}).get("text", "")
+        return responder(body.get("senderData", {}).get("chatId"), text)
 
-        # MENSAJE EXTENDIDO (tu teléfono usa este)
-        if type_message == "extendedTextMessage":
-            text = message_data.get("extendedTextMessageData", {}).get("text", "")
-            print("MENSAJE EXTENDIDO:", text)
-            enviar_respuesta(sender, text)
-            return jsonify({"status": "ok"}), 200
-
-        print("Tipo de mensaje NO manejado:", type_message)
-        return jsonify({"status": "ignored"}), 200
-
-    except Exception as e:
-        print("ERROR:", str(e))
-        return jsonify({"error": str(e)}), 500
+    return jsonify({"status": "ignored", "reason": type_message}), 200
 
 
-def enviar_respuesta(numero, texto):
+def responder(chat_id, texto):
     url = f"https://api.green-api.com/waInstance{INSTANCE_ID}/sendMessage/{API_TOKEN}"
-
     payload = {
-        "chatId": numero,
+        "chatId": chat_id,
         "message": f"Recibí tu mensaje: {texto}"
     }
-
-    print("Enviando respuesta a WhatsApp:", payload)
-
     r = requests.post(url, json=payload)
-    print("Respuesta GreenAPI:", r.text)
+    print("RESPUESTA GREEN-API:", r.text)
+    return jsonify({"status": "ok"}), 200
 
 
 if __name__ == "__main__":
