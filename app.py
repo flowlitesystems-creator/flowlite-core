@@ -6,44 +6,40 @@ app = Flask(__name__)
 INSTANCE_ID = "7107368022"
 API_TOKEN = "1f9e8df4f4ee4354bfb08547cc11ed83639a1764569e43169a"
 
-
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
+
     body = data.get("body", {})
-    msg = body.get("messageData", {})
-    type_message = msg.get("typeMessage")
+    type_message = body.get("typeMessage")
+    chat_id = body.get("chatId")
+    text = ""
 
-    # EXTRAER chatId
-    chat_id = body.get("senderData", {}).get("chatId")
+    # ---- textMessage ----
+    if type_message == "textMessage":
+        text = body.get("textMessage")
 
-    # EXTRAER texto del mensaje SEGÚN TU JSON REAL
-    # (siempre viene como textMessage o extendedTextMessage.text)
-    texto = (
-        msg.get("textMessage")
-        or msg.get("extendedTextMessage", {}).get("text")
-        or ""
-    )
+    # ---- extendedTextMessage ----
+    if type_message == "extendedTextMessage":
+        text = body.get("extendedTextMessage", {}).get("text", "")
 
-    if texto and chat_id:
-        return responder(chat_id, texto)
+    # Si no hay texto, ignoramos
+    if not text or not chat_id:
+        return jsonify({"ignored": True}), 200
 
-    # si llega algo que no es texto
-    return jsonify({"ignored": type_message}), 200
+    enviar_respuesta(chat_id, text)
+    return jsonify({"ok": True}), 200
 
 
-def responder(chat_id, texto):
+def enviar_respuesta(chat_id, text):
     url = f"https://api.green-api.com/waInstance{INSTANCE_ID}/sendMessage/{API_TOKEN}"
+
     payload = {
         "chatId": chat_id,
-        "message": f"Recibí tu mensaje: {texto}"
+        "message": f"Recibí tu mensaje: {text}"
     }
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "FlowLite-Render/1.0"
-    }
+
+    headers = {"Content-Type": "application/json"}
 
     r = requests.post(url, json=payload, headers=headers)
-    print("GREEN-API RESPONSE:", r.status_code, r.text)
-
-    return jsonify({"sent": True}), 200
+    print("RESPUESTA GREEN-API:", r.status_code, r.text)
