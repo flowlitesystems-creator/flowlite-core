@@ -13,13 +13,11 @@ def webhook():
     body = data.get("body", {})
     type_message = body.get("typeMessage")
 
-    # TEXT NORMAL
     if type_message == "textMessage":
         text = body.get("textMessageData", {}).get("textMessage", "")
         chat_id = body.get("senderData", {}).get("chatId")
         return responder(chat_id, text)
 
-    # EXTENDED TEXT
     if type_message == "extendedTextMessage":
         text = body.get("extendedTextMessageData", {}).get("text", "")
         chat_id = body.get("senderData", {}).get("chatId")
@@ -42,12 +40,11 @@ def responder(chat_id, texto):
     }
 
     r = requests.post(url, json=payload, headers=headers)
-
     print("RESPUESTA GREEN-API:", r.text)
 
     return jsonify({"status": "ok"}), 200
 
 
 if __name__ == "__main__":
-    # NECESARIO PARA RENDER
     app.run(host="0.0.0.0", port=10000)
+
