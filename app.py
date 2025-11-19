@@ -8,14 +8,12 @@ def webhook():
         data = request.json
         print("Webhook recibido:", data)
 
-        body = data.get("body", {})
+        # === Estructura REAL del webhook de Green-API ===
+        message_data = data.get("messageData", {})
+        type_message = message_data.get("typeMessage")
 
-        # El typeMessage está AQUÍ
-        type_message = body.get("typeMessage")
-
-        # Mensaje de texto
         if type_message == "textMessage":
-            text = body.get("textMessageData", {}).get("textMessage", "")
+            text = message_data.get("textMessageData", {}).get("textMessage", "")
             print("MENSAJE RECIBIDO:", text)
 
             respuesta = f"Recibido tu mensaje: {text}"
