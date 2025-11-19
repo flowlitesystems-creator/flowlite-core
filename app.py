@@ -3,57 +3,56 @@ import requests
 
 app = Flask(__name__)
 
-# 🔥 TU INSTANCIA Y TOKEN AQUÍ
 INSTANCE_ID = "7107368022"
 API_TOKEN = "1f9e8df4f4ee4354bfb08547cc11ed83639a1764569e43169a"
 
-# =================================
-# FUNCIÓN PARA RESPONDER A WHATSAPP
-# =================================
-def enviar_respuesta(chat_id, texto):
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    try:
+        data = request.json
+        print("Webhook recibido:", data)
+
+        body = data.get("body", {})
+        message_data = body.get("messageData", {})
+        type_message = message_data.get("typeMessage")
+
+        # OBTENER NÚMERO DEL REMITENTE
+        sender = body.get("senderData", {}).get("sender", "")
+
+        # MENSAJE NORMAL
+        if type_message == "textMessage":
+            text = message_data.get("textMessageData", {}).get("textMessage", "")
+            print("MENSAJE RECIBIDO:", text)
+            enviar_respuesta(sender, text)
+            return jsonify({"status": "ok"}), 200
+
+        # MENSAJE EXTENDIDO (tu teléfono usa este)
+        if type_message == "extendedTextMessage":
+            text = message_data.get("extendedTextMessageData", {}).get("text", "")
+            print("MENSAJE EXTENDIDO:", text)
+            enviar_respuesta(sender, text)
+            return jsonify({"status": "ok"}), 200
+
+        print("Tipo de mensaje NO manejado:", type_message)
+        return jsonify({"status": "ignored"}), 200
+
+    except Exception as e:
+        print("ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
+
+
+def enviar_respuesta(numero, texto):
     url = f"https://api.green-api.com/waInstance{INSTANCE_ID}/sendMessage/{API_TOKEN}"
 
     payload = {
-        "chatId": chat_id,
-        "message": texto
+        "chatId": numero,
+        "message": f"Recibí tu mensaje: {texto}"
     }
 
+    print("Enviando respuesta a WhatsApp:", payload)
+
     r = requests.post(url, json=payload)
-
-    print("📤 RESPUESTA ENVIADA:", r.text)
-    return r.status_code
-
-
-# ===========
-# WEBHOOK
-# ===========
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    data = request.json
-    print("📩 Webhook recibido:", data)
-
-    body = data.get("body", {})
-    msg = body.get("messageData", {})
-    msg_type = msg.get("typeMessage")
-
-    chat_id = body.get("senderData", {}).get("chatId", "")
-
-    # mensaje de texto normal
-    if msg_type == "textMessage":
-        texto = msg.get("textMessageData", {}).get("textMessage", "")
-        print("💬 Texto:", texto)
-        enviar_respuesta(chat_id, f"Recibí tu mensaje: {texto}")
-
-    # mensaje extendido (la mayoría de celulares)
-    elif msg_type == "extendedTextMessage":
-        texto = msg.get("extendedTextMessageData", {}).get("text", "")
-        print("💬 Texto extendido:", texto)
-        enviar_respuesta(chat_id, f"Recibí tu mensaje: {texto}")
-
-    else:
-        print("⚠️ Tipo no manejado:", msg_type)
-
-    return jsonify({"status": "ok"}), 200
+    print("Respuesta GreenAPI:", r.text)
 
 
 if __name__ == "__main__":
