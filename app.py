@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import requests
+import os
 
 app = Flask(__name__)
 
@@ -47,9 +48,7 @@ def responder(chat_id, texto):
         "message": f"Recibí tu mensaje: {texto}"
     }
 
-    headers = {
-        "Content-Type": "application/json"
-    }
+    headers = {"Content-Type": "application/json"}
 
     print("=== ENVIANDO RESPUESTA A GREEN-API ===")
     print("URL:", url)
@@ -66,4 +65,5 @@ def responder(chat_id, texto):
 
 
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
