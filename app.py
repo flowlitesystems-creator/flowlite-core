@@ -8,18 +8,29 @@ def webhook():
         data = request.json
         print("Webhook recibido:", data)
 
-        # === Estructura REAL del webhook de Green-API ===
-        message_data = data.get("messageData", {})
+        body = data.get("body", {})
+        message_data = body.get("messageData", {})
         type_message = message_data.get("typeMessage")
 
+        # -------------------------
+        # TEXTMESSAGE NORMAL
+        # -------------------------
         if type_message == "textMessage":
-            text = message_data.get("textMessageData", {}).get("textMessage", "")
+            text_message_data = message_data.get("textMessageData", {})
+            text = text_message_data.get("textMessage", "")
+
             print("MENSAJE RECIBIDO:", text)
+            return jsonify({"response": f"Recibí tu mensaje: {text}"}), 200
 
-            respuesta = f"Recibido tu mensaje: {text}"
-            print("RESPONDIENDO:", respuesta)
+        # -------------------------
+        # EXTENDEDTEXTMESSAGE  (EL QUE TE ESTÁ LLEGANDO)
+        # -------------------------
+        if type_message == "extendedTextMessage":
+            ext = message_data.get("extendedTextMessageData", {})
+            text = ext.get("text", "")
 
-            return jsonify({"status": "ok", "reply": respuesta}), 200
+            print("MENSAJE EXTENDIDO RECIBIDO:", text)
+            return jsonify({"response": f"Recibí tu mensaje: {text}"}), 200
 
         print("Tipo de mensaje no manejado:", type_message)
         return jsonify({"status": "ignored"}), 200
