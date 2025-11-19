@@ -10,5 +10,22 @@ def home():
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
-    print("Mensaje recibido:", data)
-    return jsonify({"status": "ok"}), 200
+    print("📩 Webhook recibido:", data)
+
+    try:
+        msg = data["messageData"]["textMessageData"]["textMessage"]
+        sender = data["senderData"]["sender"]
+    except:
+        return jsonify({"status": "ignored"}), 200
+
+    # RESPUESTA AUTOMÁTICA
+    respuesta = f"Hola! Recibí tu mensaje: {msg}"
+
+    print("➡️ Enviando respuesta automática:", respuesta)
+
+    return jsonify({"replyMessage": respuesta}), 200
+
+
+if __name__ == "__main__":
+    import os
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
