@@ -1,49 +1,37 @@
 from flask import Flask, request, jsonify
-import requests
-import os
 
 app = Flask(__name__)
 
-GREENAPI_ID = os.getenv("GREENAPI_INSTANCE_ID")
-GREENAPI_TOKEN = os.getenv("GREENAPI_TOKEN")
-
-
-@app.route("/", methods=["GET"])
-def home():
-    return "FlowLite is running!", 200
-
-
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    data = request.json
-    print("📩 Webhook recibido:", data)
-
     try:
-        # Obtener mensaje
-        message = data["messageData"]["textMessage"]
-        chat_id = data["senderData"]["chatId"]
+        data = request.json
+        print("Webhook recibido:", data)
 
-        # Enviar la respuesta automática
-        send_message(chat_id, f"Recibido: {message}")
+        # === extracción segura del mensaje ===
+        body = data.get("body", {})
+
+        message_data = body.get("messageData", {})
+        type_message = message_data.get("typeMessage")
+
+        # Mensaje de texto
+        if type_message == "textMessage":
+            text_message_data = message_data.get("textMessageData", {})
+            text = text_message_data.get("textMessage", "")
+            print("MENSAJE RECIBIDO:", text)
+
+            # RESPUESTA AUTOMÁTICA
+            respuesta = f"Recibido tu mensaje: {text}"
+            print("RESPONDIENDO:", respuesta)
+            return jsonify({"status": "ok", "reply": respuesta}), 200
+
+        print("Tipo de mensaje no manejado:", type_message)
+        return jsonify({"status": "ignored"}), 200
 
     except Exception as e:
-        print("❗ Error procesando mensaje:", e)
-
-    return jsonify({"status": "ok"}), 200
-
-
-def send_message(chat_id, text):
-    url = f"https://7107.api.green-api.com/waInstance{GREENAPI_ID}/sendMessage/{GREENAPI_TOKEN}"
-
-    payload = {
-        "chatId": chat_id,
-        "message": text
-    }
-
-    r = requests.post(url, json=payload)
-    print("📤 Respuesta enviada:", r.text)
+        print("ERROR:", str(e))
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)
