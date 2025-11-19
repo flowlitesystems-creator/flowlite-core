@@ -11,31 +11,43 @@ def webhook():
     data = request.json
 
     body = data.get("body", {})
-    type_message = body.get("typeMessage")  # <--- ESTA ES LA RUTA CORRECTA PARA TU JSON
+    type_message = body.get("typeMessage")
 
-    # === TEXT NORMAL ===
+    # TEXT NORMAL
     if type_message == "textMessage":
         text = body.get("textMessageData", {}).get("textMessage", "")
-        return responder(body.get("senderData", {}).get("chatId"), text)
+        chat_id = body.get("senderData", {}).get("chatId")
+        return responder(chat_id, text)
 
-    # === EXTENDED TEXT ===
+    # EXTENDED TEXT
     if type_message == "extendedTextMessage":
         text = body.get("extendedTextMessageData", {}).get("text", "")
-        return responder(body.get("senderData", {}).get("chatId"), text)
+        chat_id = body.get("senderData", {}).get("chatId")
+        return responder(chat_id, text)
 
     return jsonify({"status": "ignored", "reason": type_message}), 200
 
 
 def responder(chat_id, texto):
     url = f"https://api.green-api.com/waInstance{INSTANCE_ID}/sendMessage/{API_TOKEN}"
+
     payload = {
         "chatId": chat_id,
         "message": f"Recibí tu mensaje: {texto}"
     }
-    r = requests.post(url, json=payload)
+
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "FlowLite-Render/1.0"
+    }
+
+    r = requests.post(url, json=payload, headers=headers)
+
     print("RESPUESTA GREEN-API:", r.text)
+
     return jsonify({"status": "ok"}), 200
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    # NECESARIO PARA RENDER
+    app.run(host="0.0.0.0", port=10000)
