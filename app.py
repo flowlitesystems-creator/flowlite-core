@@ -8,21 +8,19 @@ def webhook():
         data = request.json
         print("Webhook recibido:", data)
 
-        # === extracción segura del mensaje ===
         body = data.get("body", {})
 
-        message_data = body.get("messageData", {})
-        type_message = message_data.get("typeMessage")
+        # El typeMessage está AQUÍ
+        type_message = body.get("typeMessage")
 
         # Mensaje de texto
         if type_message == "textMessage":
-            text_message_data = message_data.get("textMessageData", {})
-            text = text_message_data.get("textMessage", "")
+            text = body.get("textMessageData", {}).get("textMessage", "")
             print("MENSAJE RECIBIDO:", text)
 
-            # RESPUESTA AUTOMÁTICA
             respuesta = f"Recibido tu mensaje: {text}"
             print("RESPONDIENDO:", respuesta)
+
             return jsonify({"status": "ok", "reply": respuesta}), 200
 
         print("Tipo de mensaje no manejado:", type_message)
