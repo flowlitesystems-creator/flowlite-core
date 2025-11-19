@@ -1,7 +1,3 @@
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
@@ -12,33 +8,25 @@ def webhook():
         message_data = body.get("messageData", {})
         type_message = message_data.get("typeMessage")
 
-        # -------------------------
-        # TEXTMESSAGE NORMAL
-        # -------------------------
+        # 📌 Manejar mensajes de texto normales
         if type_message == "textMessage":
-            text_message_data = message_data.get("textMessageData", {})
-            text = text_message_data.get("textMessage", "")
-
+            text = message_data.get("textMessageData", {}).get("textMessage", "")
             print("MENSAJE RECIBIDO:", text)
-            return jsonify({"response": f"Recibí tu mensaje: {text}"}), 200
 
-        # -------------------------
-        # EXTENDEDTEXTMESSAGE  (EL QUE TE ESTÁ LLEGANDO)
-        # -------------------------
-        if type_message == "extendedTextMessage":
-            ext = message_data.get("extendedTextMessageData", {})
-            text = ext.get("text", "")
-
+        # 📌 Manejar mensajes extendedTextMessage (los que tú estás enviando)
+        elif type_message == "extendedTextMessage":
+            text = message_data.get("extendedTextMessageData", {}).get("text", "")
             print("MENSAJE EXTENDIDO RECIBIDO:", text)
-            return jsonify({"response": f"Recibí tu mensaje: {text}"}), 200
 
-        print("Tipo de mensaje no manejado:", type_message)
-        return jsonify({"status": "ignored"}), 200
+        else:
+            print("Tipo de mensaje NO manejado:", type_message)
+            return jsonify({"status": "ignored"}), 200
+
+        # RESPUESTA
+        respuesta = f"Recibí tu mensaje: {text}"
+        print("RESPONDIENDO:", respuesta)
+        return jsonify({"status": "ok", "reply": respuesta}), 200
 
     except Exception as e:
         print("ERROR:", str(e))
         return jsonify({"error": str(e)}), 500
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
