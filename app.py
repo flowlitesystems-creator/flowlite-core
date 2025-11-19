@@ -15,16 +15,14 @@ def webhook():
         # === MENSAJE DE TEXTO NORMAL ===
         if type_message == "textMessage":
             text = message_data.get("textMessageData", {}).get("textMessage", "")
-            print("MENSAJE RECIBIDO:", text)
             return responder(text)
 
         # === MENSAJE DE TEXTO EXTENDIDO ===
         if type_message == "extendedTextMessage":
             text = message_data.get("extendedTextMessageData", {}).get("text", "")
-            print("MENSAJE EXTENDIDO:", text)
             return responder(text)
 
-        print("Tipo de mensaje no manejado:", type_message)
+        print("Tipo de mensaje NO manejado:", type_message)
         return jsonify({"status": "ignored"}), 200
 
     except Exception as e:
