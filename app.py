@@ -1,6 +1,10 @@
 from flask import Flask, request, jsonify
+import requests
 
 app = Flask(__name__)
+
+INSTANCE_ID = "7107368022"
+API_TOKEN = "1f9e8df4f4ee4354bfb08547cc11ed83639a1764569e43169a"
 
 
 @app.route("/webhook", methods=["POST"])
@@ -9,34 +13,44 @@ def webhook():
         data = request.json
         print("Webhook recibido:", data)
 
-        # OJO: messageData está directamente en data
-        message_data = data.get("messageData", {})
+        body = data.get("body", {})
+        message_data = body.get("messageData", {})
         type_message = message_data.get("typeMessage")
 
-        # === MENSAJE DE TEXTO NORMAL ===
+        # === Mensaje de texto normal ===
         if type_message == "textMessage":
             text = message_data.get("textMessageData", {}).get("textMessage", "")
-            print("MENSAJE TEXTO:", text)
-            return responder(text)
 
-        # === MENSAJE DE TEXTO EXTENDIDO ===
-        if type_message == "extendedTextMessage":
+        # === Mensaje extendido ===
+        elif type_message == "extendedTextMessage":
             text = message_data.get("extendedTextMessageData", {}).get("text", "")
-            print("MENSAJE EXTENDIDO:", text)
-            return responder(text)
 
-        print("Tipo de mensaje no manejado:", type_message)
-        return jsonify({"status": "ignored"}), 200
+        else:
+            print("Tipo no manejado:", type_message)
+            return jsonify({"status": "ignored"}), 200
+
+        print("MENSAJE RECIBIDO:", text)
+
+        # ===== RESPUESTA AUTOMÁTICA =====
+        enviar_respuesta(text)
+
+        return jsonify({"status": "ok"}), 200
 
     except Exception as e:
         print("ERROR:", e)
         return jsonify({"error": str(e)}), 500
 
 
-def responder(texto):
-    respuesta = f"Recibí tu mensaje: {texto}"
-    print("RESPONDIENDO:", respuesta)
-    return jsonify({"status": "ok", "reply": respuesta}), 200
+def enviar_respuesta(texto):
+    url = f"https://7107368022.api.greenapi.com/waSendMessage/{API_TOKEN}"
+
+    payload = {
+        "chatId": "913642644@c.us",
+        "message": f"Recibí tu mensaje: {texto}"
+    }
+
+    r = requests.post(url, json=payload)
+    print("RESPUESTA GREEN API:", r.text)
 
 
 if __name__ == "__main__":
