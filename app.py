@@ -2,11 +2,6 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def home():
-    return "OK", 200
-
-
 @app.route("/webhook", methods=["POST"])
 def webhook():
     try:
@@ -20,20 +15,20 @@ def webhook():
         # === MENSAJE DE TEXTO NORMAL ===
         if type_message == "textMessage":
             text = message_data.get("textMessageData", {}).get("textMessage", "")
-            print("MENSAJE TEXTO:", text)
+            print("MENSAJE RECIBIDO:", text)
             return responder(text)
 
-        # === MENSAJE EXTENDIDO (LOS QUE TE SALEN EN LOS LOGS) ===
+        # === MENSAJE DE TEXTO EXTENDIDO ===
         if type_message == "extendedTextMessage":
             text = message_data.get("extendedTextMessageData", {}).get("text", "")
-            print("MENSAJE EXTENDIDO:", text)
+            print("MENSAJE EXTENDIDO RECIBIDO:", text)
             return responder(text)
 
-        print("Tipo de mensaje NO manejado:", type_message)
+        print("Tipo de mensaje no manejado:", type_message)
         return jsonify({"status": "ignored"}), 200
 
     except Exception as e:
-        print("ERROR:", str(e))
+        print("ERROR:", e)
         return jsonify({"error": str(e)}), 500
 
 
